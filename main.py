@@ -68,20 +68,21 @@ def testalert():
 # ====== LONG-TERM DAILY ALERT ENGINE (07:00 Europe/London) ======
 
 def cg_market_chart_gbp(coin_id: str, days: int = 400):
-    """Daily closes for up to ~400 days."""
-    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    params = {"vs_currency": "gbp", "days": str(days), "interval": "daily"}
-    r = requests.get(url, headers=headers, params=params, timeout=15)
-    j = r.json()
-    # CoinGecko returns list of [timestamp, price]; we only need price series
-    prices = [p[1] for p in j.get("prices", [])]
-    return prices
-
-def sma(values, window: int):
-    if not values or len(values) < window:
-        return None
-    return sum(values[-window:]) / window
+    """Return daily GBP closes; safe on rate-limits or bad responses."""
+    try:
+        url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        params = {"vs_currency": "gbp", "days": str(days), "interval": "daily"}
+        r = requests.get(url, headers=headers, params=params, timeout=20)
+        if r.status_code != 200:
+            return []  # treat as no data
+        j = r.json()
+        prices = j.get("prices")
+        if not isinstance(prices, list):
+            return []
+        return [p[1] for p in prices if isinstance(p, list) and len(p) >= 2]
+    except Exception:
+        return []
 
 def recent_swing_high(values, lookback: int = 180):
     if not values:
@@ -202,8 +203,17 @@ threading.Thread(target=daily_scheduler_thread, daemon=True).start()
 # Manual endpoint to test the daily logic immediately
 @app.get("/run-daily-now")
 def run_daily_now():
-    daily_longterm_check()
-    return {"ok": True, "ran": True}
+    try:
+        daily_longterm_check()
+        return {"ok": True, "ran": True}
+    except Exception as e:
+        # Optional: send a silent self-notification for debugging
+        try:
+            send_alert(f"Daily check error (handled): {type(e).__name__}")
+        except Exception:
+            pass
+        return {"ok": False, "error": str(e)}
+
 
 @app.get("/run-weekly-now")
 def run_weekly_now():
