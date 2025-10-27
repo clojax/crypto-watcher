@@ -8,10 +8,11 @@ COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 def get_price(coin):
     try:
         url = f"https://api.coingecko.com/api/v3/coins/{coin}"
-        r = requests.get(url)
+        r = requests.get(url, timeout=10)
         data = r.json()
         return data["market_data"]["current_price"]["gbp"]
-    except:
+    except Exception as e:
+        print("Error:", e)
         return None
 
 @app.get("/")
