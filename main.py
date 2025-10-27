@@ -67,19 +67,6 @@ def testalert():
 
 # ====== LONG-TERM DAILY ALERT ENGINE (07:00 Europe/London) ======
 
-DATA_TZ = ZoneInfo("Europe/London")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = "8260198146"  # your chat id
-
-def send_alert(message: str):
-    if not TELEGRAM_TOKEN:
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    try:
-        requests.post(url, data={"chat_id": CHAT_ID, "text": message}, timeout=10)
-    except Exception:
-        pass
-
 def cg_market_chart_gbp(coin_id: str, days: int = 400):
     """Daily closes for up to ~400 days."""
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -217,6 +204,12 @@ threading.Thread(target=daily_scheduler_thread, daemon=True).start()
 def run_daily_now():
     daily_longterm_check()
     return {"ok": True, "ran": True}
+
+@app.get("/run-weekly-now")
+def run_weekly_now():
+    weekly_summary()
+    return {"ok": True, "weekly": True}
+
 
 # ====== WEEKLY SUMMARY (SUNDAY 09:00 LONDON) ======
 
