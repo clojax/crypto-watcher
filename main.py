@@ -9,11 +9,13 @@ app = FastAPI()
 def get_price(coin):
     try:
         url = f"https://api.coingecko.com/api/v3/coins/{coin.lower()}"
-        r = requests.get(url, timeout=10)
+        headers = {"User-Agent": "Mozilla/5.0"}  # <-- Important
+        r = requests.get(url, headers=headers, timeout=10)
         data = r.json()
         return data["market_data"]["current_price"]["gbp"]
     except:
         return None
+
 
 @app.get("/")
 def home():
