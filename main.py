@@ -3,16 +3,13 @@ import requests
 
 app = FastAPI()
 
-COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
-
 def get_price(coin):
     try:
-        url = f"https://api.coingecko.com/api/v3/coins/{coin}"
+        url = f"https://api.coingecko.com/api/v3/coins/{coin.lower()}"
         r = requests.get(url, timeout=10)
         data = r.json()
         return data["market_data"]["current_price"]["gbp"]
-    except Exception as e:
-        print("Error:", e)
+    except:
         return None
 
 @app.get("/")
@@ -21,8 +18,7 @@ def home():
 
 @app.get("/price/{coin}")
 def price(coin: str):
-    price = get_price(coin.lower())
-    if price is None:
-        return {"error": "Coin not found"}
-    return {"coin": coin, "price_gbp": price}
-
+    p = get_price(coin)
+    if p is None:
+        return {"coin": coin, "price_gbp": None, "info": "Coin not found or no data returned"}
+    return {"coin": coin, "price_gbp": p}
