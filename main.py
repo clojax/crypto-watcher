@@ -7,6 +7,8 @@ import os
 from datetime import datetime, timedelta, time as dtime
 from zoneinfo import ZoneInfo  # built-in on Python 3.9+
 
+DATA_TZ = ZoneInfo("Europe/London")
+
 
 app = FastAPI()
 
