@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 import requests
+import json
+import time
+import threading
 
 app = FastAPI()
 
@@ -22,3 +25,25 @@ def price(coin: str):
     if p is None:
         return {"coin": coin, "price_gbp": None, "info": "Coin not found or no data returned"}
     return {"coin": coin, "price_gbp": p}
+
+prices = {}
+
+def update_prices():
+    while True:
+        try:
+            with open("watchlist.json") as f:
+                watchlist = json.load(f)["coins"]
+
+            for coin in watchlist:
+                prices[coin] = get_price(coin)
+        except:
+            pass
+
+        time.sleep(60)  # update every 60 seconds
+
+threading.Thread(target=update_prices, daemon=True).start()
+
+@app.get("/watchlist")
+def get_watchlist_prices():
+    return prices
+
