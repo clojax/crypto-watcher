@@ -20,7 +20,7 @@ def get_price(coin):
     except:
         return None
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
 CHAT_ID = "8260198146"  # your chat ID
 
 def send_alert(message):
