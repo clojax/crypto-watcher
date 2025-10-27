@@ -3,6 +3,8 @@ import requests
 import json
 import time
 import threading
+import os
+
 
 app = FastAPI()
 
@@ -15,6 +17,13 @@ def get_price(coin):
         return data["market_data"]["current_price"]["gbp"]
     except:
         return None
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = "8260198146"  # your chat ID
+
+def send_alert(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, data={"chat_id": CHAT_ID, "text": message})
 
 
 @app.get("/")
@@ -48,4 +57,9 @@ threading.Thread(target=update_prices, daemon=True).start()
 @app.get("/watchlist")
 def get_watchlist_prices():
     return prices
+
+@app.get("/testalert")
+def testalert():
+    send_alert("Crypto Watcher Connected ✅")
+    return {"sent": True}
 
