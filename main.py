@@ -217,3 +217,59 @@ threading.Thread(target=daily_scheduler_thread, daemon=True).start()
 def run_daily_now():
     daily_longterm_check()
     return {"ok": True, "ran": True}
+
+# ====== WEEKLY SUMMARY (SUNDAY 09:00 LONDON) ======
+
+def weekly_summary():
+    try:
+        with open("watchlist.json") as f:
+            watchlist = json.load(f)["coins"]
+    except:
+        return
+
+    summary_lines = ["WEEKLY OUTLOOK — LONG-TERM POSITIONING\n"]
+
+    for coin in watchlist:
+        try:
+            series = cg_market_chart_gbp(coin, days=400)
+            if not series or len(series) < 210:
+                continue
+
+            current = series[-1]
+            sma200 = sma(series, 200)
+            swing = recent_swing_high(series, lookback=180)
+
+            dd = pct(current, swing)  # drawdown from high
+            ext = pct(current, sma200)  # extension vs trend
+
+            # Determine state
+            if dd is not None and dd <= -30 and dd >= -40 and ext < 0:
+                status = "ACCUMULATE"
+            elif ext is not None and ext >= 25:
+                status = "PROFIT MANAGEMENT"
+            else:
+                status = "HOLD"
+
+            summary_lines.append(
+                f"{coin.upper()} — {status}\n"
+                f"• Drawdown: {dd}% from swing high\n"
+                f"• Trend Extension: {ext}% vs 200D\n"
+            )
+
+        except:
+            continue
+
+    send_alert("\n".join(summary_lines))
+
+
+def weekly_scheduler_thread():
+    while True:
+        now = datetime.now(tz=DATA_TZ)
+        if now.weekday() == 6 and now.hour == 9:  # Sunday = 6
+            weekly_summary()
+            time.sleep(3600)  # avoid repeat within the same hour
+        time.sleep(300)  # check every 5 minutes
+
+
+threading.Thread(target=weekly_scheduler_thread, daemon=True).start()
+
